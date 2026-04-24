@@ -1,51 +1,40 @@
 # buildspec.yml - Instructions for AWS CodeBuild
 # CodeBuild reads this file and executes commands in order
- 
+
 version: 0.2
- 
-# 'phases' are stages of the build process
+
 phases:
-  # INSTALL PHASE - Install any tools you need
   install:
     runtime-versions:
-      nodejs: 18    # We install Node.js (not needed for static site, but good practice)
+      nodejs: 18
     commands:
       - echo "=== INSTALL PHASE STARTED ==="
       - echo "Installing dependencies..."
-      # For a static website, there's nothing to install
-      # But we echo messages so we can see progress in logs
       - echo "=== INSTALL PHASE COMPLETED ==="
- 
-  # PRE_BUILD PHASE - Steps before the actual build
+
   pre_build:
     commands:
       - echo "=== PRE-BUILD PHASE STARTED ==="
       - echo "Validating HTML files..."
-      # Check if index.html exists - if not, fail early
       - |
         if [ ! -f website/index.html ]; then
           echo "ERROR: index.html not found!"
           exit 1
         fi
       - echo "✅ index.html found"
-      # List all files we're going to deploy
       - echo "Files to be deployed:"
       - ls -la website/
       - echo "=== PRE-BUILD PHASE COMPLETED ==="
- 
-  # BUILD PHASE - The actual build steps
+
   build:
     commands:
       - echo "=== BUILD PHASE STARTED ==="
       - echo "Build started on $(date)"
-      # For static website, we just copy files to output directory
-      # In a real React/Angular app, you'd run: npm run build
       - echo "Preparing website files..."
       - cp -r website/* .
       - echo "✅ Files prepared for deployment"
       - echo "=== BUILD PHASE COMPLETED ==="
- 
-  # POST_BUILD PHASE - Steps after build
+
   post_build:
     commands:
       - echo "=== POST-BUILD PHASE STARTED ==="
@@ -54,14 +43,14 @@ phases:
       - ls -la *.html
       - echo "✅ Build successful! Pipeline will now deploy to S3"
       - echo "=== POST-BUILD PHASE COMPLETED ==="
- 
-# ARTIFACTS - What files to pass to next pipeline stage (Deploy stage)
+
 artifacts:
   files:
     - "*.html"        # All HTML files in root
     - "**/*"          # All other files and folders
-  # discard-paths: yes  # Uncomment if you want flat structure in S3
-# CACHE - Speed up future builds by caching dependencies
+  discard-paths: yes  # Flatten paths so files go to bucket root
+
 cache:
   paths:
-    - '/root/.npm/**/*'  # Cache npm packages (if using Node.js)
+    - '/root/.npm/**/*'
+
