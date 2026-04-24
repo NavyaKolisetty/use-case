@@ -135,12 +135,8 @@ resource "aws_s3_bucket_public_access_block" "codepipeline_bucket_pab" {
 # =====================================================
 # Why? This creates a secure connection between AWS and GitHub
 # so CodePipeline can automatically detect when you push code
-resource "aws_codestarconnections_connection" "github_connection" {
-  name          = "${var.project_name}-github-connection"
-  provider_type = "GitHub"
-  # NOTE: After Terraform creates this, you must MANUALLY 
-  # authorize it in AWS Console (one-time setup)
-}
+
+
  
 # =====================================================
 # CODE BUILD PROJECT
@@ -195,26 +191,29 @@ resource "aws_codepipeline" "website_pipeline" {
  
   # ---- STAGE 1: GET SOURCE CODE ----
   # Why? Pipeline needs to download your code from GitHub first
+  
+
   stage {
-    name = "Source"
- 
-    action {
-      name             = "Source"
-      category         = "Source"
-      owner            = "AWS"
-      provider         = "CodeStarSourceConnection"
-      version          = "1"
-      output_artifacts = ["source_output"]  # Name the output for next stage
- 
-      configuration = {
-        ConnectionArn    = aws_codestarconnections_connection.github_connection.arn
-        FullRepositoryId = "${var.github_repo_owner}/${var.github_repo_name}"
-        BranchName       = var.github_branch
-        # DetectChanges = true means auto-trigger on push
-        DetectChanges    = "true"
-      }
+  name = "Source"
+
+  action {
+    name             = "Source"
+    category         = "Source"
+    owner            = "AWS"
+    provider         = "CodeStarSourceConnection"
+    version          = "1"
+    output_artifacts = ["source_output"]
+
+    configuration = {
+      ConnectionArn    = var.github_connection_arn
+      FullRepositoryId = "${var.github_repo_owner}/${var.github_repo_name}"
+      BranchName       = var.github_branch
+      DetectChanges    = "true"
     }
   }
+}
+
+
  
   # ---- STAGE 2: BUILD ----
   # Why? This stage runs our buildspec.yml which validates
@@ -258,4 +257,3 @@ resource "aws_codepipeline" "website_pipeline" {
     }
   }
 }
-
